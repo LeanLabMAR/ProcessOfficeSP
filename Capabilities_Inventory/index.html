@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Capacidades - Oficina de Procesos</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind Config para colores corporativos -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tp: {
+                            purple: '#4B286D', 
+                            dark: '#2A1B38', 
+                            pink: '#E30075'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Animación avanzada para Acordeones Anidados */
+        .accordion-grid {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-in-out;
+        }
+        .accordion-grid.open {
+            grid-template-rows: 1fr;
+        }
+        .accordion-inner {
+            overflow: hidden;
+        }
+        
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+
+        /* Scrollbar estilizada clara y limpia */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+    </style>
+</head>
+<body class="bg-[#F4F5F8] text-gray-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Principal -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-10 h-10 rounded bg-tp-dark text-white font-bold text-xl shadow-sm">
+                    TP
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-lg font-bold text-gray-900 leading-tight">Oficina de Procesos</h1>
+                    <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Document Control System</span>
+                </div>
+            </div>
+            <div>
+                <button class="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                    <i class="ph ph-user-circle text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        
+        <div class="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
+                    Mapa de Capacidades
+                </h2>
+                <p class="text-gray-500 max-w-2xl text-sm leading-relaxed">
+                    Navega por los niveles jerárquicos y utiliza el icono <i class="ph ph-arrow-square-out align-middle mx-0.5 text-gray-500"></i> para acceder de forma directa al repositorio de cada área en SharePoint.
+                </p>
+            </div>
+        </div>
+
+        <!-- Grilla de Capacidades: Tres columnas, altura controlada -->
+        <div id="capabilities-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Las tarjetas se inyectarán aquí por JS -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
+            <p>© 2026 Teleperformance. Todos los derechos reservados. <span class="text-tp-pink font-semibold">#WeAreTP</span></p>
+        </div>
+    </footer>
+
+    <!-- Lógica de Conversión de Datos y Renderizado -->
+    <script>
+        // DATOS PLANOS 
+        const rawData = [
+            { "Capability Name": "1. Operations", "Nivel": "1", "C_ID": "1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1..aspx" },
+            { "Capability Name": "1.1 Client Operations", "Nivel": "2", "C_ID": "1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1%20Client%20Operations.aspx" },
+            { "Capability Name": "1.1.1 US Operations", "Nivel": "3", "C_ID": "1.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1.aspx" },
+            { "Capability Name": "1.1.1.1 CB - US Operations management", "Nivel": "4", "C_ID": "1.1.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1USIglesias.aspx" },
+            { "Capability Name": "1.1.1.2 Forero - US Operations management", "Nivel": "4", "C_ID": "1.1.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1USForero.aspx" },
+            { "Capability Name": "1.1.1.3 US - Granados Operations Management", "Nivel": "4", "C_ID": "1.1.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1US%20Granados.aspx" },
+            { "Capability Name": "1.1.1.4 US - Iglesias Operations Management", "Nivel": "4", "C_ID": "1.1.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1USIssel.aspx" },
+            { "Capability Name": "1.1.1.5 Saavedra - US Operations management", "Nivel": "4", "C_ID": "1.1.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1US%20Saavedra.aspx" },
+            { "Capability Name": "1.1.1.6 US-HM Operations management", "Nivel": "4", "C_ID": "1.1.1.6", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/1.1US-HM.aspx?csf=1&web=1&e=edJMCI" },
+            { "Capability Name": "1.1.2 Panamerican Operations", "Nivel": "3", "C_ID": "1.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1.2.aspx" },
+            { "Capability Name": "1.1.2.1.Pan-MG Operations management", "Nivel": "4", "C_ID": "1.1.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1US%20Saavedra.aspx" },
+            <!--{ "Capability Name": "1.1.2.2 DOM-HM operations management", "Nivel": "4", "C_ID": "1.1.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.1US%20Saavedra.aspx" },-->
+            { "Capability Name": "1.1.3 Offshore Operations", "Nivel": "3", "C_ID": "1.1.3", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/1.1_Offshore.aspx?csf=1&web=1&e=arB76J" },
+            { "Capability Name": "1.1.3.1 Off-FL Operations management", "Nivel": "4", "C_ID": "1.1.3.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/1.1_Offshore.aspx?csf=1&web=1&e=arB76J" },
+            { "Capability Name": "1.2 Training Management", "Nivel": "2", "C_ID": "1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.2%20Training.aspx" },
+            { "Capability Name": "1.2.1 Training Management Panamericano", "Nivel": "3", "C_ID": "1.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.2%20TRN%20Pan.aspx" },
+            { "Capability Name": "1.2.2 Training Management US", "Nivel": "3", "C_ID": "1.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.4US.aspx" },
+            { "Capability Name": "1.2.3 Training Management Offshore", "Nivel": "3", "C_ID": "1.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.4Off2.aspx" },
+            { "Capability Name": "1.3 Quality Management", "Nivel": "2", "C_ID": "1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.3%20Quality.aspx" },
+            { "Capability Name": "1.3.1 Quality Panamericano", "Nivel": "3", "C_ID": "1.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.3%20QA%20Pan.aspx" },
+            { "Capability Name": "1.3.2 Quality US", "Nivel": "3", "C_ID": "1.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.3.2.%20%20QA%20US.aspx" },
+            { "Capability Name": "1.3.3 Quality Offshore", "Nivel": "3", "C_ID": "1.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.3Off.aspx" },
+            { "Capability Name": "2. Business Development", "Nivel": "1", "C_ID": "2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.aspx" },
+            { "Capability Name": "2.1 Bid Success Office", "Nivel": "2", "C_ID": "2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.1.aspx" },
+            { "Capability Name": "2.1.1 Presales", "Nivel": "3", "C_ID": "2.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.1.1.aspx" },
+            { "Capability Name": "2.1.2 Sales Operations", "Nivel": "3", "C_ID": "2.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.1.2.aspx" },
+            { "Capability Name": "2.2 Business Development Executive", "Nivel": "2", "C_ID": "2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.2.aspx" },
+            { "Capability Name": "2.3 Digital Transformation", "Nivel": "2", "C_ID": "2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.aspx" },
+            { "Capability Name": "2.3.1 Client Success", "Nivel": "3", "C_ID": "2.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.1.aspx" },
+            { "Capability Name": "2.3.2 Interactions Analytics", "Nivel": "3", "C_ID": "2.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.2.aspx" },
+            { "Capability Name": "2.3.3 Solution Delivery", "Nivel": "3", "C_ID": "2.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.3.aspx" },
+            { "Capability Name": "2.3.4 Process Excellence and IA", "Nivel": "3", "C_ID": "2.3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.4.aspx" },
+            { "Capability Name": "2.3.4.1 Process Excellence", "Nivel": "4", "C_ID": "2.3.4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.4.1.aspx" },
+            { "Capability Name": "2.3.4.2 Atificial Intelligence", "Nivel": "4", "C_ID": "2.3.4.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/2.3.4.2.aspx" },
+            { "Capability Name": "3. Office of Experiences", "Nivel": "1", "C_ID": "3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.aspx" },
+            { "Capability Name": "3.1 Communications and Marketing", "Nivel": "2", "C_ID": "3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.1.aspx" },
+            { "Capability Name": "3.1.1 Communications TP MAR USA", "Nivel": "3", "C_ID": "3.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.1.1.aspx" },
+            { "Capability Name": "3.1.2 Internal Communications", "Nivel": "3", "C_ID": "3.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.1.2.aspx" },
+            { "Capability Name": "3.1.3 Brand Management", "Nivel": "3", "C_ID": "3.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.1.3.aspx" },
+            { "Capability Name": "3.2 Corporate Social Responsibility and Sustainability", "Nivel": "2", "C_ID": "3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.2.aspx" },
+            { "Capability Name": "3.2.1 Enviromental Management and Sustainability", "Nivel": "3", "C_ID": "3.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.2.1.aspx" },
+            { "Capability Name": "3.2.2 Social and Responsible Innovation", "Nivel": "3", "C_ID": "3.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.2.2.aspx" },
+            { "Capability Name": "3.2.3 Help Desk", "Nivel": "3", "C_ID": "3.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.2.3.aspx" },
+            { "Capability Name": "3.2.4 Quality Quality Management System ISO 9001", "Nivel": "3", "C_ID": "3.2.4", "URL": "https://teleperformance.sharepoint.com/sites/8.3.1.1BusinesscertificationsmanagementTPMAR/SitePages/OnboardingHome.aspx" },
+            { "Capability Name": "3.2.5 SST, Ambiente y Calidad (SAC)", "Nivel": "3", "C_ID": "3.2.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.2.5.aspx" },
+            { "Capability Name": "3.3 Creative Lab", "Nivel": "2", "C_ID": "3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.3.aspx" },
+            { "Capability Name": "3.3.1 US Market & Bisdev", "Nivel": "3", "C_ID": "3.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.3.1.aspx" },
+            { "Capability Name": "3.3.2 Special Project", "Nivel": "3", "C_ID": "3.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.3.2.aspx" },
+            { "Capability Name": "3.3.3 Internal Communication", "Nivel": "3", "C_ID": "3.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.3.3.aspx" },
+            { "Capability Name": "3.3.4 TP Home", "Nivel": "3", "C_ID": "3.3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.3.4.aspx" },
+            { "Capability Name": "3.4 Digital Strategy and media", "Nivel": "2", "C_ID": "3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.4.aspx" },
+            { "Capability Name": "3.5 Fiancial Office of Experience", "Nivel": "2", "C_ID": "3.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.5.aspx" },
+            { "Capability Name": "3.6 Emotions & Experiences", "Nivel": "2", "C_ID": "3.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.6.aspx" },
+            { "Capability Name": "3.6.1 Engagement", "Nivel": "3", "C_ID": "3.6.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.6.1.aspx" },
+            { "Capability Name": "3.6.2 TPDate/ onboarding", "Nivel": "3", "C_ID": "3.6.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.6.2.aspx" },
+            { "Capability Name": "3.6.3 Advisor", "Nivel": "3", "C_ID": "3.6.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/3.6.3.aspx" },
+            { "Capability Name": "4. Financial", "Nivel": "1", "C_ID": "4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.aspx" },
+            { "Capability Name": "4.1 Accounting", "Nivel": "2", "C_ID": "4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.1.aspx" },
+            { "Capability Name": "4.1.1 Cuentas por cobrar", "Nivel": "3", "C_ID": "4.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.1.1.aspx" },
+            { "Capability Name": "4.1.2 Cuentas por pagar / Facturación", "Nivel": "3", "C_ID": "4.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.1.2.aspx" },
+            { "Capability Name": "4.1.3 Contabilidad General y Reporting", "Nivel": "3", "C_ID": "4.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.1.3.aspx" },
+            { "Capability Name": "4.1.4 Activos Fijos", "Nivel": "3", "C_ID": "4.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.1.4.aspx" },
+            { "Capability Name": "4.1.5 Impuestos", "Nivel": "3", "C_ID": "4.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.1.5.aspx" },
+            { "Capability Name": "4.2 Facilities", "Nivel": "2", "C_ID": "4.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.aspx" },
+            { "Capability Name": "4.2.1 Capacity Plan", "Nivel": "3", "C_ID": "4.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.1.aspx" },
+            { "Capability Name": "4.2.2 Electrical Maintenance", "Nivel": "3", "C_ID": "4.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.2.aspx" },
+            { "Capability Name": "4.2.3 Essential Maintenance", "Nivel": "3", "C_ID": "4.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.3.aspx" },
+            { "Capability Name": "4.2.4 HSEQ and Admin", "Nivel": "3", "C_ID": "4.2.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.4.aspx" },
+            { "Capability Name": "4.2.4.1 HSEQ", "Nivel": "4", "C_ID": "4.2.4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.4.1.aspx" },
+            { "Capability Name": "4.2.5 Projects", "Nivel": "3", "C_ID": "4.2.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.2.5.aspx" },
+            { "Capability Name": "4.3 Financial Planning", "Nivel": "2", "C_ID": "4.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.3.aspx" },
+            { "Capability Name": "4.3.1 Pricing", "Nivel": "3", "C_ID": "4.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.3.1.aspx" },
+            { "Capability Name": "4.3.2 Financial Planning", "Nivel": "3", "C_ID": "4.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.3.2.aspx" },
+            { "Capability Name": "4.3.3 Reporting & Control", "Nivel": "3", "C_ID": "4.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.3.3.aspx" },
+            { "Capability Name": "4.4 Internal Control", "Nivel": "2", "C_ID": "4.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.4.aspx" },
+            { "Capability Name": "4.4.1 Internal Control", "Nivel": "3", "C_ID": "4.4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.4.1.aspx" },
+            { "Capability Name": "4.4.2 Assets Inventory", "Nivel": "3", "C_ID": "4.4.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.4.2.aspx" },
+            { "Capability Name": "4.4.3 Assets Control", "Nivel": "3", "C_ID": "4.4.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.4.3.aspx" },
+            { "Capability Name": "4.5 Payroll", "Nivel": "2", "C_ID": "4.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.5.aspx" },
+            { "Capability Name": "4.5.1 Payroll Jobs", "Nivel": "3", "C_ID": "4.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.5.1.aspx" },
+            { "Capability Name": "4.5.2 Payroll Accounting", "Nivel": "3", "C_ID": "4.5.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.5.2.aspx" },
+            { "Capability Name": "4.5.3 Social Security Management", "Nivel": "3", "C_ID": "4.5.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.5.3.aspx" },
+            { "Capability Name": "4.6 Procurement", "Nivel": "2", "C_ID": "4.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.6.aspx" },
+            { "Capability Name": "4.6.1 Procurement Shared Services", "Nivel": "3", "C_ID": "4.6.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.6.1.aspx" },
+            { "Capability Name": "4.6.2 Procurement Local Operation", "Nivel": "3", "C_ID": "4.6.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.6.2.aspx" },
+            { "Capability Name": "4.6.3 Category Management", "Nivel": "3", "C_ID": "4.6.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.6.3.aspx" },
+            { "Capability Name": "4.7 Record Management", "Nivel": "2", "C_ID": "4.7", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.7.aspx" },
+            { "Capability Name": "4.7.1 Correspondence and Messaging", "Nivel": "3", "C_ID": "4.7.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.7.1.aspx" },
+            { "Capability Name": "4.7.2 Documental Management System", "Nivel": "3", "C_ID": "4.7.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.7.2.aspx" },
+            { "Capability Name": "4.7.3 Document Administration Digitization", "Nivel": "3", "C_ID": "4.7.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.7.3.aspx" },
+            { "Capability Name": "4.8 Treasury", "Nivel": "2", "C_ID": "4.8", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/4.8.aspx" },
+            { "Capability Name": "5. People", "Nivel": "1", "C_ID": "5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.aspx" },
+            { "Capability Name": "5.1 Health & Safety", "Nivel": "2", "C_ID": "5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.aspx" },
+            { "Capability Name": "5.1.1 Preventive Health", "Nivel": "3", "C_ID": "5.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.1.aspx" },
+            { "Capability Name": "5.1.1.1 Preventive Health", "Nivel": "4", "C_ID": "5.1.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.1.1.aspx" },
+            { "Capability Name": "5.1.1.2 Mental Health & Well-Being", "Nivel": "4", "C_ID": "5.1.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.1.2.aspx" },
+            { "Capability Name": "5.1.1.2.1 Clinical Psychology", "Nivel": "5", "C_ID": "5.1.1.2.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/5.1.1.2.1.aspx?csf=1&web=1&e=A8PCPa" },
+            { "Capability Name": "5.1.1.2.2 Occupational Psychology", "Nivel": "5", "C_ID": "5.1.1.2.2", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/5.1.1.2.2.aspx?csf=1&web=1&e=3h1xkS" },
+            { "Capability Name": "5.1.2 Work Health", "Nivel": "3", "C_ID": "5.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.2.aspx" },
+            { "Capability Name": "5.1.2.1 Labor Medicine", "Nivel": "4", "C_ID": "5.1.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.2.1.aspx" },
+            { "Capability Name": "5.1.2.2 Work Ergonomics", "Nivel": "4", "C_ID": "5.1.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.2.2.aspx" },
+            { "Capability Name": "5.1.3 Hygiene & Safety", "Nivel": "3", "C_ID": "5.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.3.aspx" },
+            { "Capability Name": "5.1.3.1 Hygiene", "Nivel": "4", "C_ID": "5.1.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.3.1.aspx" },
+            { "Capability Name": "5.1.3.2 Safety", "Nivel": "4", "C_ID": "5.1.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.3.2.aspx" },
+            { "Capability Name": "5.1.4 H&S Compliance", "Nivel": "3", "C_ID": "5.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.1.4.aspx" },
+            { "Capability Name": "5.2 People Counselors", "Nivel": "2", "C_ID": "5.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.2.aspx" },
+            { "Capability Name": "5.2.1 People Counselors Panamericano/Offshore", "Nivel": "3", "C_ID": "5.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.2.1.aspx" },
+            { "Capability Name": "5.2.2 People Counselors US Market", "Nivel": "3", "C_ID": "5.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.2.2.aspx" },
+            { "Capability Name": "5.2.2.1 Shared Services", "Nivel": "4", "C_ID": "5.2.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.2.2.1.aspx" },
+            { "Capability Name": "5.3 Human Capital", "Nivel": "2", "C_ID": "5.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.aspx" },
+            { "Capability Name": "5.3.1 Hiring", "Nivel": "3", "C_ID": "5.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.1.aspx" },
+            { "Capability Name": "5.3.1.1 Seguridad Social", "Nivel": "4", "C_ID": "5.3.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.1.1.aspx" },
+            { "Capability Name": "5.3.1.2 Gestion Contratacion", "Nivel": "4", "C_ID": "5.3.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.1.2.aspx" },
+            { "Capability Name": "5.3.1.3 Sena", "Nivel": "4", "C_ID": "5.3.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.1.3.aspx" },
+            { "Capability Name": "5.3.2 Compensations & benefits", "Nivel": "3", "C_ID": "5.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.2.aspx" },
+            { "Capability Name": "5.3.2.1 Compensación", "Nivel": "4", "C_ID": "5.3.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.2.1.aspx" },
+            { "Capability Name": "5.3.2.2 Beneficios", "Nivel": "4", "C_ID": "5.3.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.2.2.aspx" },
+            { "Capability Name": "5.3.3 Labor relations", "Nivel": "3", "C_ID": "5.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.3.aspx" },
+            { "Capability Name": "5.3.4 Asuntos Migratorios", "Nivel": "3", "C_ID": "5.3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.4.aspx" },
+            { "Capability Name": "5.3.5 TP4U", "Nivel": "3", "C_ID": "5.3.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.3.5.aspx" },
+            { "Capability Name": "5.4 Learning & Development", "Nivel": "2", "C_ID": "5.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.4.aspx" },
+            { "Capability Name": "5.4.1 Talent Management", "Nivel": "3", "C_ID": "5.4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.4.1.aspx" },
+            { "Capability Name": "5.4.2 Development Programs", "Nivel": "3", "C_ID": "5.4.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.4.2.aspx" },
+            { "Capability Name": "5.4.3 Learning Programs", "Nivel": "3", "C_ID": "5.4.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.4.3.aspx" },
+            { "Capability Name": "5.4.4 Emotional Intelligence at Teleperformance-EI@TP", "Nivel": "3", "C_ID": "5.4.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.4.4.aspx" },
+            { "Capability Name": "5.5 Recruitment & Selection", "Nivel": "2", "C_ID": "5.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.aspx" },
+            { "Capability Name": "5.5.1 Recruitment and selection Staff", "Nivel": "3", "C_ID": "5.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.1.aspx" },
+            { "Capability Name": "5.5.1.1 Executive", "Nivel": "4", "C_ID": "5.5.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.1.aspx" },
+            { "Capability Name": "5.5.2 Recruitment and Selection Agents", "Nivel": "3", "C_ID": "5.5.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.2.aspx" },
+            { "Capability Name": "5.5.2.1 Selection Agents US", "Nivel": "4", "C_ID": "5.5.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.2.1.aspx" },
+            { "Capability Name": "5.5.2.2 Selection Agents Panamericano/Offshore", "Nivel": "4", "C_ID": "5.5.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.2.2.aspx" },
+            { "Capability Name": "5.5.2.3 Recruitment Agents", "Nivel": "4", "C_ID": "5.5.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.2.3.aspx" },
+            { "Capability Name": "5.5.3 Talent Acquisition", "Nivel": "3", "C_ID": "5.5.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.3.aspx" },
+            { "Capability Name": "5.6 Desarrollo de Proyectos", "Nivel": "2", "C_ID": "5.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/5.5.aspx" },
+            { "Capability Name": "6. Legal, Privacy & Compliance", "Nivel": "1", "C_ID": "6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.aspx" },
+            { "Capability Name": "6.1 Legal", "Nivel": "2", "C_ID": "6.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.aspx" },
+            { "Capability Name": "6.1.1 Clients", "Nivel": "3", "C_ID": "6.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.1.aspx" },
+            { "Capability Name": "6.1.1.1 Mercado US", "Nivel": "4", "C_ID": "6.1.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.1.1.aspx" },
+            { "Capability Name": "6.1.1.2 Panamericano", "Nivel": "4", "C_ID": "6.1.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.1.2.aspx" },
+            { "Capability Name": "6.1.1.3 Offshore", "Nivel": "4", "C_ID": "6.1.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.1.3.aspx" },
+            { "Capability Name": "6.1.2 Suppliers", "Nivel": "3", "C_ID": "6.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.aspx" },
+            { "Capability Name": "6.1.2.1 People", "Nivel": "4", "C_ID": "6.1.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.1.aspx" },
+            { "Capability Name": "6.1.2.2 Office of Experience", "Nivel": "4", "C_ID": "6.1.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.2.aspx" },
+            { "Capability Name": "6.1.2.3 Technology, Analitics and Workforce", "Nivel": "4", "C_ID": "6.1.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.3.aspx" },
+            { "Capability Name": "6.1.2.4 Facilities & Leases", "Nivel": "4", "C_ID": "6.1.2.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.4.aspx" },
+            { "Capability Name": "6.1.2.5 Transport", "Nivel": "4", "C_ID": "6.1.2.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.5.aspx" },
+            { "Capability Name": "6.1.2.6 Finance", "Nivel": "4", "C_ID": "6.1.2.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.2.6.aspx" },
+            { "Capability Name": "6.1.3 Insurance", "Nivel": "3", "C_ID": "6.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.3.aspx" },
+            { "Capability Name": "6.1.4 Corporate Governance", "Nivel": "3", "C_ID": "6.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.4.aspx" },
+            { "Capability Name": "6.1.5 Intercompany Agreements", "Nivel": "3", "C_ID": "6.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.5.aspx" },
+            { "Capability Name": "6.1.6 Special Projects", "Nivel": "3", "C_ID": "6.1.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.1.6.aspx" },
+            { "Capability Name": "6.1.6.1 Licensing", "Nivel": "4", "C_ID": "6.1.6.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.6.1.aspx" },
+            { "Capability Name": "6.1.6.2 Gambling", "Nivel": "4", "C_ID": "6.1.6.2", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.6.2.aspx" },
+            { "Capability Name": "6.1.7 Outbound and sales Services", "Nivel": "3", "C_ID": "6.1.7", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.7.aspx" },
+            { "Capability Name": "6.1.8 New Services", "Nivel": "3", "C_ID": "6.1.8", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.8.aspx" },
+            { "Capability Name": "6.1.8.1 TP Digital", "Nivel": "4", "C_ID": "6.1.8.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.8.1.aspx" },
+            { "Capability Name": "6.1.8.2 As a service", "Nivel": "4", "C_ID": "6.1.8.2", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.8.2.aspx" },
+            { "Capability Name": "6.1.8.3 TP infinity", "Nivel": "4", "C_ID": "6.1.8.3", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.8.3.aspx" },
+            { "Capability Name": "6.1.9 M&A", "Nivel": "3", "C_ID": "6.1.9", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.9.aspx" },
+            { "Capability Name": "6.1.9.1 Creacion", "Nivel": "4", "C_ID": "6.1.9.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.9.1.aspx" },
+            { "Capability Name": "6.1.9.2 Integracion", "Nivel": "4", "C_ID": "6.1.9.2", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.9.2.aspx" },
+            { "Capability Name": "6.1.9.3 Liquidacion", "Nivel": "4", "C_ID": "6.1.9.3", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.1.9.3.aspx" },
+            { "Capability Name": "6.2 Privacy innovations and Techlaw", "Nivel": "2", "C_ID": "6.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.aspx" },
+            { "Capability Name": "6.2.1 Innovation & Techlaw", "Nivel": "3", "C_ID": "6.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.1.aspx" },
+            { "Capability Name": "6.2.1.1 Data Protection Impact Assessments", "Nivel": "4", "C_ID": "6.2.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.1.1.aspx" },
+            { "Capability Name": "6.2.1.2 TPSC Assessments", "Nivel": "4", "C_ID": "6.2.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.1.2.aspx" },
+            { "Capability Name": "6.2.1.3 AI", "Nivel": "4", "C_ID": "6.2.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.1.3.aspx" },
+            { "Capability Name": "6.2.1.4 Innovation Contracts", "Nivel": "4", "C_ID": "6.2.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.1.4.aspx" },
+            { "Capability Name": "6.2.2 Privacy and Data Protection Compliance", "Nivel": "3", "C_ID": "6.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.2.aspx" },
+            { "Capability Name": "6.2.2.1 Privacy and Data Regulatory Compliance", "Nivel": "4", "C_ID": "6.2.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.2.1.aspx" },
+            { "Capability Name": "6.2.2.2 Security Incidents", "Nivel": "4", "C_ID": "6.2.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.2.2.aspx" },
+            { "Capability Name": "6.2.2.3 Global Privacy program", "Nivel": "4", "C_ID": "6.2.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.2.2.3.aspx" },
+            { "Capability Name": "6.2.2.4 Terms and conditions", "Nivel": "4", "C_ID": "6.2.2.4", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.2.2.4.aspx" },
+            { "Capability Name": "6.2.2.5 NDA", "Nivel": "4", "C_ID": "6.2.2.5", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/6.2.2.5.aspx" },
+            { "Capability Name": "6.3 Compliance", "Nivel": "2", "C_ID": "6.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.3.aspx" },
+            { "Capability Name": "6.3.1 Security Incidents", "Nivel": "3", "C_ID": "6.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.3.1.aspx" },
+            { "Capability Name": "6.3.2 Licenses - Site Certification", "Nivel": "3", "C_ID": "6.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.3.2.aspx" },
+            { "Capability Name": "6.3.3 Mapping of Corporate Risks (SAGRILAFT & Anticorruption)", "Nivel": "3", "C_ID": "6.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.3.3.aspx" },
+            { "Capability Name": "6.3.4 Corportae and Legal Compliance", "Nivel": "3", "C_ID": "6.3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.3.4.aspx" },
+            { "Capability Name": "6.3.5 Judicial Processess", "Nivel": "3", "C_ID": "6.3.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/6.3.5.aspx" },
+            { "Capability Name": "7. Technology", "Nivel": "1", "C_ID": "7", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.aspx" },
+            { "Capability Name": "7.1 IT Fullfillment", "Nivel": "2", "C_ID": "7.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.aspx" },
+            { "Capability Name": "7.1.1 Client Proximity", "Nivel": "3", "C_ID": "7.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.1.aspx" },
+            { "Capability Name": "7.1.2 Fullfillment", "Nivel": "3", "C_ID": "7.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.2.aspx" },
+            { "Capability Name": "7.1.2.1 Change Management", "Nivel": "4", "C_ID": "7.1.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.2.1.aspx" },
+            { "Capability Name": "7.1.2.2 IT Event Management", "Nivel": "4", "C_ID": "7.1.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.2.2.aspx" },
+            { "Capability Name": "7.1.2.3 Celula IT", "Nivel": "4", "C_ID": "7.1.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.2.3.aspx" },
+            { "Capability Name": "7.1.2.4 Móviles Coporativos", "Nivel": "4", "C_ID": "7.1.2.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.1.2.3.aspx" },
+            { "Capability Name": "7.2 PMO", "Nivel": "2", "C_ID": "7.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.2.aspx" },
+            { "Capability Name": "7.2.1 Client Projects", "Nivel": "3", "C_ID": "7.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.2.1.aspx" },
+            { "Capability Name": "7.2.2 IT Projects", "Nivel": "3", "C_ID": "7.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.2.2.aspx" },
+            { "Capability Name": "7.2.3 Transformation", "Nivel": "3", "C_ID": "7.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.2.3.aspx" },
+            { "Capability Name": "7.3 Security", "Nivel": "2", "C_ID": "7.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.aspx" },
+            { "Capability Name": "7.3.1 Cibersecurity", "Nivel": "3", "C_ID": "7.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.1.aspx" },
+            { "Capability Name": "7.3.2 Operational Security Management", "Nivel": "3", "C_ID": "7.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.2.aspx" },
+            { "Capability Name": "7.3.2.1 TP Protect", "Nivel": "4", "C_ID": "7.3.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.2.1.aspx" },
+            { "Capability Name": "7.3.3 Physical Security", "Nivel": "3", "C_ID": "7.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.3.aspx" },
+            { "Capability Name": "7.3.3.1 Carnetización", "Nivel": "3", "C_ID": "7.3.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.3.1.aspx" },
+            { "Capability Name": "7.3.3.2 Command Center", "Nivel": "3", "C_ID": "7.3.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.3.2.aspx" },
+            { "Capability Name": "7.3.3.3 Seguridad Fisica", "Nivel": "3", "C_ID": "7.3.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.3.3.aspx" },
+            { "Capability Name": "7.3.4  GRC", "Nivel": "3", "C_ID": "7.3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.4.aspx" },
+            { "Capability Name": "7.3.5 US Market", "Nivel": "3", "C_ID": "7.3.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.4.4.aspx" },
+            { "Capability Name": "7.3.6 Pan / Offshore Market", "Nivel": "3", "C_ID": "7.3.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.3.3.aspx" },
+            { "Capability Name": "7.4 IT Desktop Support", "Nivel": "2", "C_ID": "7.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.2.4.aspx" },
+            { "Capability Name": "8. Workforce, Data, Process, Assets & Logistics Management Offices", "Nivel": "1", "C_ID": "8", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.aspx" },
+            { "Capability Name": "8.1 Data Office", "Nivel": "2", "C_ID": "8.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.aspx" },
+            { "Capability Name": "8.1.1 Data Delivery", "Nivel": "3", "C_ID": "8.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.aspx" },
+            { "Capability Name": "8.1.1.1 Transversal Delivery", "Nivel": "4", "C_ID": "8.1.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.1.aspx" },
+            { "Capability Name": "8.1.1.2 Bussiness Intelligence", "Nivel": "4", "C_ID": "8.1.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.2.aspx" },
+            { "Capability Name": "8.1.1.3 BI APPS", "Nivel": "4", "C_ID": "8.1.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.3.aspx" },
+            { "Capability Name": "8.1.1.4 Proyectos", "Nivel": "4", "C_ID": "8.1.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.4.aspx" },
+            { "Capability Name": "8.1.1.5 Non Operative BI", "Nivel": "4", "C_ID": "8.1.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.5.aspx" },
+            { "Capability Name": "8.1.1.6 RPA", "Nivel": "4", "C_ID": "8.1.1.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.1.6.aspx" },
+            { "Capability Name": "8.1.2 Data Pipeline", "Nivel": "3", "C_ID": "8.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.2.aspx" },
+            { "Capability Name": "8.1.2.1 GBS", "Nivel": "4", "C_ID": "8.1.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.21.aspx" },
+            { "Capability Name": "8.1.3 Reporting", "Nivel": "3", "C_ID": "8.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.3.aspx" },
+            { "Capability Name": "8.1.3.1 Front-End BI", "Nivel": "4", "C_ID": "8.1.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.3.1.aspx" },
+            { "Capability Name": "8.1.4 Data Governance", "Nivel": "3", "C_ID": "8.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.4.aspx" },
+            { "Capability Name": "8.1.4.1 COE", "Nivel": "4", "C_ID": "8.1.4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.4.1.aspx" },
+            { "Capability Name": "8.1.4.2 Governance", "Nivel": "4", "C_ID": "8.1.4.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.4.2.aspx" },
+            { "Capability Name": "8.1.5 Data Engineering", "Nivel": "3", "C_ID": "8.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.5.aspx" },
+            { "Capability Name": "8.1.5.1 Data Calculation", "Nivel": "4", "C_ID": "8.1.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.5.1.aspx" },
+            { "Capability Name": "8.1.5.2 Lilos", "Nivel": "4", "C_ID": "8.1.5.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.5.2.aspx" },
+            { "Capability Name": "8.1.6 Data Products", "Nivel": "3", "C_ID": "8.1.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.6.aspx" },
+            { "Capability Name": "8.1.6.1 Cloud  Development", "Nivel": "4", "C_ID": "8.1.6.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.1.6.1.aspx" },
+            { "Capability Name": "8.1.6.2 ML Model Development", "Nivel": "4", "C_ID": "8.1.6.2", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.1.6.2.aspx" },
+            { "Capability Name": "8.1.6.3 IA & Gen generation", "Nivel": "4", "C_ID": "8.1.6.3", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.1.6.3.aspx" },
+            { "Capability Name": "8.1.7 Human Analytics", "Nivel": "3", "C_ID": "8.1.7", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.1.7.aspx" },
+            { "Capability Name": "8.1.7.1 HR Pipeline", "Nivel": "4", "C_ID": "8.1.7.1", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.1.7.1.aspx" },
+            { "Capability Name": "8.1.7.2 HR Front END", "Nivel": "4", "C_ID": "8.1.7.2", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.1.7.2.aspx" },
+            { "Capability Name": "8.1.7.3 HR Insights LAB", "Nivel": "4", "C_ID": "8.1.7.3", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.1.7.3.aspx" },
+            
+            { "Capability Name": "8.2 Wapps", "Nivel": "2", "C_ID": "8.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.4.aspx" },
+            { "Capability Name": "8.2.1 Desarrollo de Aplicaciones", "Nivel": "3", "C_ID": "8.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.4.1.aspx" },
+            { "Capability Name": "8.2.2 Product Management", "Nivel": "3", "C_ID": "8.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.4.2.aspx" },
+            { "Capability Name": "8.2.3 Helpdesk Data Office", "Nivel": "3", "C_ID": "8.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.4.3.aspx" },
+            { "Capability Name": "8.2.4 UI/UX", "Nivel": "3", "C_ID": "8.2.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.4.4.aspx" },
+            { "Capability Name": "8.3 Goods Strategy", "Nivel": "2", "C_ID": "8.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.aspx" },
+            { "Capability Name": "8.3.1 Warehouse & Config", "Nivel": "3", "C_ID": "8.3.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.1.aspx" },
+            { "Capability Name": "8.3.2 Reporting", "Nivel": "3", "C_ID": "8.3.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.2.aspx" },
+            { "Capability Name": "8.3.3 Collections & logistic vendor", "Nivel": "3", "C_ID": "8.3.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.3.aspx" },
+            { "Capability Name": "8.3.4 TP Shop", "Nivel": "3", "C_ID": "8.3.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.4.aspx" },
+            { "Capability Name": "8.3.5 Transporting", "Nivel": "3", "C_ID": "8.3.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.5.aspx" },
+            { "Capability Name": "8.3.6 Brick and mortar (B&M)", "Nivel": "3", "C_ID": "8.3.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.5.6.aspx" },
+            { "Capability Name": "9. Country Management", "Nivel": "1", "C_ID": "9", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/9.%20Country%20Managers.aspx" },
+            { "Capability Name": "9.1 Guyana", "Nivel": "2", "C_ID": "9.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Guyana.aspx" },
+            { "Capability Name": "9.1.5 People", "Nivel": "3", "C_ID": "9.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Guyana.aspx" },
+            { "Capability Name": "9.1.5.1 Health & Safety", "Nivel": "4", "C_ID": "9.1.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Guyana.aspx" },
+            { "Capability Name": "9.2 Perú", "Nivel": "2", "C_ID": "9.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Peru.aspx" },
+            { "Capability Name": "9.2.5 People", "Nivel": "3", "C_ID": "9.2.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Peru.aspx" },
+            { "Capability Name": "9.2.5.1 Health & Safety", "Nivel": "4", "C_ID": "9.2.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Peru.aspx" },
+            { "Capability Name": "9.3 Nicaragua", "Nivel": "2", "C_ID": "9.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Nicaragua.aspx" },
+            { "Capability Name": "9.3.5 People", "Nivel": "3", "C_ID": "9.3.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Nicaragua.aspx" },
+            { "Capability Name": "9.3.5.1 Health & Safety", "Nivel": "4", "C_ID": "9.3.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Nicaragua.aspx" },
+            { "Capability Name": "9.4 Trinidad & Tobago", "Nivel": "2", "C_ID": "9.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Trinidad.aspx?csf=1&web=1&e=tVy6X6&cid=a4c19ce1-f314-418b-8bdd-2f4d9707397d" },
+            { "Capability Name": "9.4.5 People", "Nivel": "3", "C_ID": "9.4.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Trinidad.aspx?csf=1&web=1&e=tVy6X6&cid=a4c19ce1-f314-418b-8bdd-2f4d9707397d" },
+            { "Capability Name": "9.4.5.1 Health & Safety", "Nivel": "4", "C_ID": "9.4.5.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/Home_Trinidad.aspx?csf=1&web=1&e=tVy6X6&cid=a4c19ce1-f314-418b-8bdd-2f4d9707397d" },
+            { "Capability Name": "10. Global Business Services - GBS", "Nivel": "1", "C_ID": "10", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.aspx" },
+            { "Capability Name": "10.1 IT Global Business Services - GBS", "Nivel": "2", "C_ID": "10.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.1.aspx" },
+            { "Capability Name": "10.1.1 IT Operation Services", "Nivel": "3", "C_ID": "10.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.1.1%20IT%20Operations%20Services.aspx" },
+            { "Capability Name": "10.1.1.1 Licenciamiento", "Nivel": "4", "C_ID": "10.1.1.1", "URL": "http://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.1.2%20Licenciamiento.aspx" },
+            { "Capability Name": "10.1.1.2 Control Financiero IT", "Nivel": "4", "C_ID": "10.1.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.1.1.2%20Control%20financiero%20IT.aspx" },
+            { "Capability Name": "10.1.2 User Admin", "Nivel": "3", "C_ID": "10.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/7.6.1.aspx" },
+            { "Capability Name": "10.1.3 Systems", "Nivel": "3", "C_ID": "10.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.3%20Systems.aspx" },
+            { "Capability Name": "10.1.4 Architecture", "Nivel": "3", "C_ID": "10.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.4%20Architecture.aspx" },
+            { "Capability Name": "10.1.5 Applications", "Nivel": "3", "C_ID": "10.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.5%20Applications.aspx" },
+            { "Capability Name": "10.1.6 Networking", "Nivel": "3", "C_ID": "10.1.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.6%20Networking.aspx" },
+            { "Capability Name": "10.1.6.1 Conectividad LAN", "Nivel": "4", "C_ID": "10.1.6.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.6.1%20Conectividad%20LAN.aspx" },
+            { "Capability Name": "10.1.6.2 Conectividad WAN", "Nivel": "4", "C_ID": "10.1.6.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.6.2%20Conectividad%20WAN.aspx" },
+            { "Capability Name": "10.1.6.3 Firewall y Seguridad", "Nivel": "4", "C_ID": "10.1.6.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.6.3%20Firewall%20y%20Seguridad.aspx" },
+            { "Capability Name": "10.1.6.4 Conectividad WLAN", "Nivel": "4", "C_ID": "10.1.6.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.6.4%20Conectividad%20WLAN.aspx" },
+            { "Capability Name": "10.1.7 Telecom", "Nivel": "3", "C_ID": "10.1.7", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.7%20Telecom.aspx" },
+            { "Capability Name": "10.1.7.1 ACD Telecom MAR", "Nivel": "4", "C_ID": "10.1.7.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.7.2%20Recording.aspx" },
+            { "Capability Name": "10.1.7.2 Recording", "Nivel": "4", "C_ID": "10.1.7.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.7.1%20ACD%20Telecom%20MAR.aspx" },
+            { "Capability Name": "10.1.8 IT LSS", "Nivel": "3", "C_ID": "10.1.8", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.7.8.aspx?csf=1&web=1&e=rlEGo1&CID=9c6e89f2-220c-4b6a-99e8-4d4a1297095e" },
+            { "Capability Name": "10.2 GBS Datos", "Nivel": "2", "C_ID": "10.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.2%20IT%20Operations.aspx" },
+            { "Capability Name": "10.3 SOC Regional", "Nivel": "2", "C_ID": "10.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/10.3%20SOC%20regional.aspx?csf=1&web=1&e=HDj5Tx&CID=e516614c-89d2-47a1-af29-ac1005ca3118" },
+            { "Capability Name": "11.Latam Share Services", "Nivel": "1", "C_ID": "11", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/11.aspx" },
+            { "Capability Name": "11.1 Workforce Office", "Nivel": "2", "C_ID": "11.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.aspx" },
+            { "Capability Name": "11.1.1 Staffing & Sizing", "Nivel": "3", "C_ID": "11.1.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.1.aspx" },
+            { "Capability Name": "11.1.2 Forecasting & Scheduling", "Nivel": "3", "C_ID": "11.1.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.2.aspx" },
+            { "Capability Name": "11.1.3 Real Time Management", "Nivel": "3", "C_ID": "11.1.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.3.aspx" },
+            { "Capability Name": "11.1.4 Controlling", "Nivel": "3", "C_ID": "11.1.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.4.aspx" },
+            { "Capability Name": "11.1.5 Admin", "Nivel": "3", "C_ID": "11.1.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.5.aspx" },
+            { "Capability Name": "11.1.6 Development", "Nivel": "3", "C_ID": "11.1.6", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.6.aspx" },
+            { "Capability Name": "11.1.7 Workforce Plus", "Nivel": "3", "C_ID": "11.1.7", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.7.aspx" },
+            { "Capability Name": "11.1.8 Nice IEX", "Nivel": "3", "C_ID": "11.1.8", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.8.aspx" },
+            { "Capability Name": "11.1.9 Scheduling", "Nivel": "3", "C_ID": "11.1.9", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.2.9.aspx" },
+            { "Capability Name": "11.2 Process Office", "Nivel": "2", "C_ID": "11.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.aspx" },
+            { "Capability Name": "11.2.1 Business Architecture Management", "Nivel": "3", "C_ID": "11.2.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.1.aspx" },
+            { "Capability Name": "11.2.2 Process Improvement Management", "Nivel": "3", "C_ID": "11.2.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.2.aspx" },
+            { "Capability Name": "11.2.3 Corporate Compliance Management", "Nivel": "3", "C_ID": "11.2.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.3.aspx" },
+            { "Capability Name": "11.2.4 Process Control & Automation Management", "Nivel": "3", "C_ID": "11.2.4", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.4.aspx" },
+            { "Capability Name": "11.2.4.1 Payroll Controllers", "Nivel": "4", "C_ID": "11.2.4.1", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.4.1.aspx" },
+            { "Capability Name": "11.2.4.2 Process Automation Management", "Nivel": "3", "C_ID": "11.2.4.2", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.4.2.aspx" },
+            { "Capability Name": "11.2.5 Country process Management", "Nivel": "3", "C_ID": "11.2.5", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/8.3.5.aspx" },
+            { "Capability Name": "11.2.6 Internal Control for Process Office", "Nivel": "3", "C_ID": "11.2.6", "URL": "https://teleperformance.sharepoint.com/:u:/r/sites/TPMARProcessManagementOffice2/SitePages/8.3.6.aspx" },
+            { "Capability Name": "11.3 Business Evolution", "Nivel": "2", "C_ID": "11.3", "URL": "https://teleperformance.sharepoint.com/sites/TPMARProcessManagementOffice2/SitePages/1.2.aspx" }
+        ];
+
+        function buildTree(flatData) {
+            const tree = [];
+            const lookup = {};
+
+            flatData.forEach(item => {
+                let cleanTitle = item["Capability Name"].replace(/^[0-9\.]+\s*/, '').trim();
+                
+                lookup[item["C_ID"]] = {
+                    id: item["C_ID"],
+                    title: cleanTitle,
+                    url: item["URL"],
+                    children: []
+                };
+            });
+
+            flatData.forEach(item => {
+                const node = lookup[item["C_ID"]];
+                const parts = item["C_ID"].split('.');
+                
+                if (parts.length === 1) {
+                    tree.push(node);
+                } else {
+                    parts.pop(); 
+                    const parentId = parts.join('.');
+                    
+                    if (lookup[parentId]) {
+                        lookup[parentId].children.push(node);
+                    } else {
+                        tree.push(node);
+                    }
+                }
+            });
+
+            return tree;
+        }
+
+        const capabilitiesData = buildTree(rawData);
+
+        function toggleAccordion(id) {
+            const content = document.getElementById(`content-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            const row = document.getElementById(`row-${id}`);
+            
+            content.classList.toggle('open');
+            icon.classList.toggle('rotate-180');
+            
+            if (content.classList.contains('open')) {
+                row.classList.add('bg-gray-50');
+            } else {
+                row.classList.remove('bg-gray-50');
+            }
+        }
+
+        function renderTree(items, level) {
+            if (!items || items.length === 0) return '';
+            
+            let html = '';
+            items.forEach(item => {
+                const hasChildren = item.children && item.children.length > 0;
+                const uniqueId = item.id.replace(/\./g, '-');
+                
+                // Configuración de márgenes por profundidad
+                let paddingClass = level === 2 ? 'pl-4' : (level === 3 ? 'pl-10' : (level === 4 ? 'pl-16' : 'pl-24'));
+                
+                // Efecto cristal/oscuro para los subniveles
+                let bgClass = level === 2 ? 'bg-white' : (level === 3 ? 'bg-gray-50/50' : 'bg-gray-50');
+                
+                // Borde izquierdo sutil
+                let borderClass = level > 2 ? 'border-l border-gray-200 ml-2' : '';
+                
+                let cursorClass = hasChildren ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50';
+                let onClickAction = hasChildren ? `onclick="toggleAccordion('${uniqueId}')"` : '';
+                
+                let btnSharePoint = `
+                    <a href="${item.url || '#'}" target="_blank" onclick="event.stopPropagation();" title="Abrir en SharePoint" class="relative z-10 flex items-center justify-center p-1.5 text-gray-400 hover:text-gray-600 transition-colors shrink-0">
+                        <i class="ph ph-arrow-square-out text-lg"></i>
+                    </a>
+                `;
+
+                let toggleIcon = hasChildren ? `
+                    <div class="w-6 flex justify-center shrink-0">
+                        <i id="icon-${uniqueId}" class="ph ph-caret-down text-gray-400 transition-transform duration-300"></i>
+                    </div>
+                ` : `<div class="w-6 shrink-0"></div>`; 
+
+                html += `
+                    <div class="border-b border-gray-100 last:border-0 ${borderClass}">
+                        <div id="row-${uniqueId}" ${onClickAction} class="w-full flex justify-between items-center py-3 pr-3 ${paddingClass} ${bgClass} ${cursorClass} transition-colors duration-200 group min-h-[3.5rem]">
+                            
+                            <div class="flex items-center gap-3 flex-grow pr-3">
+                                <span class="w-8 font-medium text-gray-900 text-xs shrink-0 mt-[1px]">${item.id}</span>
+                                <span class="text-sm font-medium text-gray-700 leading-snug group-hover:text-gray-900 transition-colors">${item.title}</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-1 shrink-0">
+                                ${btnSharePoint}
+                                ${toggleIcon}
+                            </div>
+                            
+                        </div>
+                        
+                        ${hasChildren ? `
+                        <div id="content-${uniqueId}" class="accordion-grid ${bgClass}">
+                            <div class="accordion-inner">
+                                ${renderTree(item.children, level + 1)}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function renderApp() {
+            const gridContainer = document.getElementById('capabilities-grid');
+            let htmlContent = '';
+
+            capabilitiesData.forEach(cap => {
+                const subCapsCount = cap.children ? cap.children.length : 0;
+
+                htmlContent += `
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-200 flex flex-col overflow-hidden h-[550px]">
+                        
+                        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-20">
+                            <div class="flex items-center gap-3 pr-2 relative z-10">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-700 font-bold text-sm flex-shrink-0">
+                                    ${cap.id}
+                                </div>
+                                <div class="flex flex-col xl:flex-row xl:items-center gap-1.5 xl:gap-2">
+                                    <h3 class="font-bold text-lg text-gray-900 leading-tight">${cap.title}</h3>
+                                    <span class="inline-flex items-center justify-center px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded" title="Contiene ${subCapsCount} sub-capacidades L2">
+                                        L2: ${subCapsCount}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <a href="${cap.url || '#'}" target="_blank" onclick="event.stopPropagation();" title="Abrir en SharePoint" class="flex items-center justify-center w-9 h-9 text-white bg-[#44265E] hover:bg-opacity-90 rounded-lg shadow-sm transition-colors shrink-0 relative z-10">
+                                <i class="ph ph-arrow-square-out text-lg"></i>
+                            </a>
+                        </div>
+
+                        <div class="flex flex-col bg-white overflow-y-auto flex-grow relative z-0">
+                            ${renderTree(cap.children, 2)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            gridContainer.innerHTML = htmlContent;
+        }
+
+        document.addEventListener('DOMContentLoaded', renderApp);
+    </script>
+</body>
+</html>
